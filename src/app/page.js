@@ -57,7 +57,7 @@ export default async function Home() {
 
         <footer className="text-center text-gray-400 text-sm mt-12">
           <p>
-            Data source: Yahoo Finance (Mock), Updated daily.
+            Data source: Yahoo Finance, Updated daily.
           </p>
         </footer>
       </div>
