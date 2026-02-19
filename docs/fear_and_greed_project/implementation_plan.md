@@ -25,7 +25,9 @@
     4. **Junk Bond Demand**: HYG トレンド (プロキシ)
     5. **Market Volatility**: N225 Historical Volatility
     6. **Safe Haven Demand**: N225 20日リターン (プロキシ)
-- **ログ保存機能**: `public/log/data_yyyymmdd.json` に日次データを保存。同名ファイルは上書き。
+- **ログ保存機能**:
+    1. `public/log/data_yyyymmdd.json` に日次データを保存。
+    2. `/mnt/chromeos/GoogleDrive/MyDrive/Linuxファイル/` にもコピーを保存 (ディレクトリが存在する場合のみ)。
 - **タイムゾーン**: 全て JCT (日本標準時) で処理。
 
 #### [NEW] [page.js](file:///src/app/page.js)
@@ -53,6 +55,7 @@
 ### 自動テスト
 - `node scripts/fetchData.js` の実行により、`public/data.json` および `public/log/data_yyyymmdd.json` が正常に生成されることを確認しました。
 - タイムゾーンがJCT (+09:00) で処理されていることを確認しました。
+- 指定されたGoogle Driveパスが存在する場合、ログファイルがバックアップされるロジックを確認しました（存在しない場合はスキップ）。
 
 ### 手動検証
 - 生成された `data.json` に基づき、フロントエンドが正常に描画されることを確認済み。

@@ -12,6 +12,7 @@
      - JCT (日本時間) を基準にデータ処理を行い、`timestamp` を記録。
      - `public/data.json` に最新データを保存。
      - `public/log/data_yyyymmdd.json` に日次履歴データを保存（同名ファイルは上書き）。
+     - **外部バックアップ**: 同データを `/mnt/chromeos/GoogleDrive/MyDrive/Linuxファイル/` にコピー（ディレクトリが存在する場合のみ）。
 
 2. **フロントエンド (`app/page.js`, generated components)**
    - **スピードメーター (GaugeChart)**: `recharts` を使用し、Fear/Greedスコアを視覚化。
@@ -32,6 +33,8 @@ node scripts/fetchData.js
 コンソールに以下のメッセージが表示されれば成功です。
 - `Data successfully saved to .../public/data.json`
 - `Log data successfully saved to .../public/log/data_yyyymmdd.json`
+- `Log data successfully saved to Google Drive: ...` (※ドライブパスが存在する場合)
+- `Google Drive directory not found: ... (Skipping backup)` (※ドライブパスが存在しない場合)
 
 ### 3. アプリケーション起動 (フロントエンド)
 ```bash

@@ -16,7 +16,7 @@
     - [x] フッター文言の修正 (Mock表記削除)
     - [x] ページタイトルの修正 (Create New App -> Japanese Market Fear & Greed Index)
 - [x] ドキュメント作成
-    - [x] Linux環境構築・Cron設定手順 (`manual.md`)
+    - [x] Linux環境構築・Cron設定手順 (`manual.md`) (Google Drive追記済み)
     - [x] プロジェクト構成・実装詳細 (`implementation_plan.md`)
     - [x] 動作確認・ウォークスルー (`walkthrough.md`)
 - [x] その他調整
@@ -25,3 +25,5 @@
     - [x] JCT (日本標準時) での日付・時刻処理の実装
     - [x] `public/log/data_yyyymmdd.json` へのデータ保存処理の追加
     - [x] `.gitignore` への `public/log/*.json` 追加
+- [x] **外部バックアップ (Google Drive)**
+    - [x] `data_yyyymmdd.json` を Google Drive パスにも出力する機能の追加
