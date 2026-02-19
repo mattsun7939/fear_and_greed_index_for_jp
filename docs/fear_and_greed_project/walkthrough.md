@@ -4,9 +4,12 @@
 
 ## 実装内容
 1. **データ取得スクリプト (`scripts/fetchData.js`)**
-   - モックデータを使用して、市場の勢い、株価の強さなど7つの指標を計算。
-   - `yahoo-finance2` を利用する基盤を作成 (現在はモック)。
-   - `public/data.json` にJSON形式で保存。
+   - **使用ライブラリ**: `yahoo-finance2`
+   - **データソース**: 日経平均 (`^N225`), 米国10年債 (`^TNX`), 米国ハイイールド債 (`HYG`)
+   - **処理内容**:
+     - 過去250日分のデータを取得し、移動平均やボラティリティを計算。
+     - 7つの指標（勢い、強さ、幅、オプション、ジャンク債、ボラティリティ、セーフヘイブン）をスコアリング。
+     - `public/data.json` にJSON形式で保存。
 
 2. **フロントエンド (`app/page.js`, generated components)**
    - **スピードメーター (GaugeChart)**: `recharts` を使用し、Fear/Greedスコアを視覚化。
@@ -24,7 +27,8 @@ npm install
 ```bash
 node scripts/fetchData.js
 ```
-コンソールに `Data successfully saved...` と表示されればOKです。
+コンソールに `Fetching market data...` と表示され、最後に `Data successfully saved to ...` と表示されれば成功です。
+`public/data.json` が更新されていることを確認してください。
 
 ### 3. アプリケーション起動 (フロントエンド)
 ```bash
@@ -34,13 +38,9 @@ npm run dev
 
 ### 4. 表示確認
 - **スピードメーター**: 針がスコアの位置を指しているか確認。
-- **リスト**: 7つの指標が表示され、適切なアイコンと色がついているか確認。
+- **リスト**: 7つの指標が全て表示され、`Data source: Yahoo Finance` となっているか確認。
+- **日付**: `Updated: YYYY/MM/DD` がデータ生成日になっているか確認。
 
-### 5. データ更新の検証
-1. `scripts/fetchData.js` の `marketMomentum.score` などを書き換えて保存。
-2. `node scripts/fetchData.js` を再実行。
-3. ブラウザをリロードし、値が反映されるか確認。
-
-## 次のステップ (本番化に向けて)
-- `scripts/fetchData.js` 内の `yahooFinance` 呼び出しのコメントアウトを外し、実際のシンボル (`^N225` 等) でデータ取得ロジックを実装する。
-- Error handlingの強化。
+## 運用上の注意
+- `fetchData.js` は `yahoo-finance2` を使用しているため、インターネット接続が必要です。
+- 頻繁に実行しすぎるとアクセス制限を受ける可能性があります（1日1回推奨）。

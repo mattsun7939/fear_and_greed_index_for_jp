@@ -5,8 +5,9 @@
     - [x] 必要なライブラリのインストール (yahoo-finance2, recharts, lucide-react 等)
 - [x] バックエンド (データ取得) 実装
     - [x] `scripts/fetchData.js` の作成
-    - [x] 各指標のモックロジック実装
+    - [x] 各指標の実装 (実データ使用: ^N225, ^TNX, HYG)
     - [x] JSONファイル出力処理の実装
+    - [x] Put/Call Option 指標の除外処理
 - [x] フロントエンド実装
     - [x] メインページ (`app/page.js`) のレイアウト作成
     - [x] スピードメーター (Gauge) コンポーネントの実装

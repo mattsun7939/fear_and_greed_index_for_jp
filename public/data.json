@@ -1,49 +1,43 @@
 {
-  "score": 58,
+  "score": 70,
   "rating": "Greed",
-  "timestamp": "2026-02-19T07:21:54.523Z",
+  "timestamp": "2026-02-19T08:06:47.482Z",
   "indicators": [
     {
       "name": "Market Momentum",
-      "score": 75,
-      "rating": "Greed",
-      "description": "日経平均は125日移動平均線を上回っており、強気相場を示唆しています。"
+      "score": 100,
+      "rating": "Extreme Greed",
+      "description": "日経平均株価(57468)は125日移動平均線(49314)と比較して上回っており、Extreme Greedを示しています。"
     },
     {
       "name": "Stock Price Strength",
-      "score": 60,
-      "rating": "Greed",
-      "description": "新高値銘柄数が新安値銘柄数を上回っています。"
-    },
-    {
-      "name": "Stock Price Breadth",
-      "score": 55,
-      "rating": "Neutral",
-      "description": "騰落レシオは中立的な範囲にあります。"
-    },
-    {
-      "name": "Put/Call Options",
-      "score": 40,
-      "rating": "Fear",
-      "description": "プットオプションの取引が増加しており、警戒感が見られます。"
-    },
-    {
-      "name": "Junk Bond Demand",
-      "score": 80,
+      "score": 98,
       "rating": "Extreme Greed",
-      "description": "投資家はリスクを取って社債を購入しており、強いリスク選好を示しています。"
+      "description": "日経平均は52週レンジの98%の位置にあり、Extreme Greedを示しています。"
+    },
+    {
+      "name": "Stock Price Breadth (Proxy)",
+      "score": 53,
+      "rating": "Neutral",
+      "description": "過去20営業日のうち10日が上昇しており、市場の裾野の広さはNeutralです。"
+    },
+    {
+      "name": "Junk Bond Demand (Global)",
+      "score": 51,
+      "rating": "Neutral",
+      "description": "グローバルなリスク選好度(HYG)は移動平均と比較してNeutralを示しています。"
     },
     {
       "name": "Market Volatility",
-      "score": 50,
-      "rating": "Neutral",
-      "description": "ボラティリティは平均的な水準です。"
+      "score": 31,
+      "rating": "Fear",
+      "description": "日経平均のボラティリティ(HV)は23.7%で、市場の不安定さはFearレベルです。"
     },
     {
       "name": "Safe Haven Demand",
-      "score": 45,
-      "rating": "Neutral",
-      "description": "国債と株式のリターン差は大きくありません。"
+      "score": 85,
+      "rating": "Extreme Greed",
+      "description": "株式の直近リターン(7.0%)から、リスク資産への需要はExtreme Greedです。"
     }
   ]
 }
