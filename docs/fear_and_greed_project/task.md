@@ -1,0 +1,18 @@
+# タスクリスト
+
+- [x] プロジェクトのセットアップ
+    - [x] Next.js アプリケーションの初期化 (JavaScript, Tailwind CSS)
+    - [x] 必要なライブラリのインストール (yahoo-finance2, recharts, lucide-react 等)
+- [x] バックエンド (データ取得) 実装
+    - [x] `scripts/fetchData.js` の作成
+    - [x] 各指標のモックロジック実装
+    - [x] JSONファイル出力処理の実装
+- [x] フロントエンド実装
+    - [x] メインページ (`app/page.js`) のレイアウト作成
+    - [x] スピードメーター (Gauge) コンポーネントの実装
+    - [x] 7つの指標リスト表示コンポーネントの実装
+    - [x] `public/data.json` の読み込み処理
+- [x] ドキュメント作成
+    - [x] Linux環境構築・Cron設定手順 (`manual.md`)
+    - [x] プロジェクト構成・実装詳細 (`implementation_plan.md`)
+    - [x] 動作確認・ウォークスルー (`walkthrough.md`)
