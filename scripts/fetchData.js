@@ -5,6 +5,7 @@ const yahooFinance = new yahooFinanceModule();
 
 const DATA_FILE_PATH = path.join(__dirname, '../public/data.json');
 const LOG_DIR_PATH = path.join(__dirname, '../public/log');
+const GOOGLE_DRIVE_DIR_PATH = '/mnt/chromeos/GoogleDrive/MyDrive/Linuxファイル/';
 
 // JCTで現在時刻を取得するヘルパー
 function getJCTDate() {
@@ -208,10 +209,6 @@ async function fetchMarketData() {
       // Wait, if I shift the time, `toISOString` gives `2026-02-20T02:00:00.000Z` when it is 2am in Japan.
       // This is technically "UTC 2am", which is "JCT 11am". This is wrong.
       // I should NOT shift the time object itself if I want to use .toISOString() correctly.
-      // BUT `yahoo-finance` needs simple dates.
-      // For the JSON output `timestamp`:
-      // Use `jctNow.toISOString().replace('Z', '') + '+09:00'` ? 
-      // Let's explicitly format it.
       timestamp: jctNow.toISOString().replace('Z', '+09:00'),
       indicators: indicators
     };
@@ -236,6 +233,20 @@ async function fetchMarketData() {
 
     fs.writeFileSync(logFilePath, JSON.stringify(data, null, 2));
     console.log(`Log data successfully saved to ${logFilePath}`);
+
+    // 3. Save to Google Drive (if available)
+    try {
+      if (fs.existsSync(GOOGLE_DRIVE_DIR_PATH)) {
+        const driveFilePath = path.join(GOOGLE_DRIVE_DIR_PATH, logFileName);
+        fs.writeFileSync(driveFilePath, JSON.stringify(data, null, 2));
+        console.log(`Log data successfully saved to Google Drive: ${driveFilePath}`);
+      } else {
+        console.log(`Google Drive directory not found: ${GOOGLE_DRIVE_DIR_PATH} (Skipping backup)`);
+      }
+    } catch (driveError) {
+      console.error('Error saving to Google Drive:', driveError.message);
+    }
+
 
   } catch (error) {
     console.error('Error fetching data:', error);

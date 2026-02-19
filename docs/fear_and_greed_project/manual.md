@@ -46,6 +46,11 @@ node scripts/fetchData.js
 ```
 
 成功すると `public/data.json` が更新されます。
+また、履歴データが `public/log/data_yyyymmdd.json` に保存されます。
+
+**Google Drive連携:**
+- 環境内に `/mnt/chromeos/GoogleDrive/MyDrive/Linuxファイル/` ディレクトリが存在する場合、同ディレクトリにもログファイルのコピーが保存されます。
+- ディレクトリが存在しない場合はスキップされます（エラーにはなりません）。
 
 ## 4. Cronの設定 (自動実行)
 
