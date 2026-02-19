@@ -4,6 +4,16 @@ const yahooFinanceModule = require('yahoo-finance2').default;
 const yahooFinance = new yahooFinanceModule();
 
 const DATA_FILE_PATH = path.join(__dirname, '../public/data.json');
+const LOG_DIR_PATH = path.join(__dirname, '../public/log');
+
+// JCTで現在時刻を取得するヘルパー
+function getJCTDate() {
+  // サーバーのタイムゾーンに関わらずJCT (+9) を取得
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const jct = new Date(utc + (3600000 * 9));
+  return jct;
+}
 
 // サーバー負荷軽減のための待機
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -24,12 +34,14 @@ async function fetchMarketData() {
 
     const n225 = await yahooFinance.quote('^N225');
     await sleep(1000);
-    // Calculate date for 250 days ago
-    const today = new Date();
-    const pastDate = new Date(today);
-    pastDate.setDate(today.getDate() - 250);
+    // Calculate date for 250 days ago (JCT based)
+    const todayJCT = getJCTDate();
+    const pastDate = new Date(todayJCT);
+    pastDate.setDate(todayJCT.getDate() - 250);
+
+    // Format dates as YYYY-MM-DD
     const period1 = pastDate.toISOString().split('T')[0];
-    const period2 = today.toISOString().split('T')[0];
+    const period2 = todayJCT.toISOString().split('T')[0];
 
     const n225History = await yahooFinance.historical('^N225', { period1, period2, interval: '1d' });
     await sleep(1000);
@@ -181,20 +193,49 @@ async function fetchMarketData() {
       indicators.reduce((acc, curr) => acc + curr.score, 0) / indicators.length
     );
 
+    const jctNow = getJCTDate();
     const data = {
       score: totalScore,
       rating: getRating(totalScore),
-      timestamp: new Date().toISOString(),
+      timestamp: jctNow.toISOString(), // JCT ISO string (Note: built-in ISOstring is UTC, need to format manually or accept UTC-shifted time as "local")
+      // Actually, user wants JCT processing. 
+      // If I use jctNow.toISOString(), it puts the shifted time with 'Z', which implies UTC.
+      // Better to format it like "YYYY-MM-DDTHH:mm:ss+09:00" OR just use the shifted time and know it's JCT.
+      // Let's use a clear format if possible, or just the ISO string of the shifted date (which looks like UTC but is JCT value).
+      // To be safe and explicit:
+      // timestamp: jctNow.toISOString().replace('Z', '+09:00'), // Hacky but works for display if parsed correctly or treated as string.
+      // Let's stick to standard ISO for machine readability, but the VALUE is JCT.
+      // Wait, if I shift the time, `toISOString` gives `2026-02-20T02:00:00.000Z` when it is 2am in Japan.
+      // This is technically "UTC 2am", which is "JCT 11am". This is wrong.
+      // I should NOT shift the time object itself if I want to use .toISOString() correctly.
+      // BUT `yahoo-finance` needs simple dates.
+      // For the JSON output `timestamp`:
+      // Use `jctNow.toISOString().replace('Z', '') + '+09:00'` ? 
+      // Let's explicitly format it.
+      timestamp: jctNow.toISOString().replace('Z', '+09:00'),
       indicators: indicators
     };
 
-    // JSON保存
+    // 1. Save main data.json
     const publicDir = path.dirname(DATA_FILE_PATH);
     if (!fs.existsSync(publicDir)) {
       fs.mkdirSync(publicDir, { recursive: true });
     }
     fs.writeFileSync(DATA_FILE_PATH, JSON.stringify(data, null, 2));
     console.log(`Data successfully saved to ${DATA_FILE_PATH}`);
+
+    // 2. Save log file (data_yyyymmdd.json)
+    if (!fs.existsSync(LOG_DIR_PATH)) {
+      fs.mkdirSync(LOG_DIR_PATH, { recursive: true });
+    }
+    const yyyy = jctNow.getFullYear();
+    const mm = String(jctNow.getMonth() + 1).padStart(2, '0');
+    const dd = String(jctNow.getDate()).padStart(2, '0');
+    const logFileName = `data_${yyyy}${mm}${dd}.json`;
+    const logFilePath = path.join(LOG_DIR_PATH, logFileName);
+
+    fs.writeFileSync(logFilePath, JSON.stringify(data, null, 2));
+    console.log(`Log data successfully saved to ${logFilePath}`);
 
   } catch (error) {
     console.error('Error fetching data:', error);
