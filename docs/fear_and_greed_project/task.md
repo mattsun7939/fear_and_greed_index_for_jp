@@ -21,3 +21,7 @@
     - [x] 動作確認・ウォークスルー (`walkthrough.md`)
 - [x] その他調整
     - [x] `.gitignore` の更新 (データファイル、ログ等)
+- [x] **履歴データ保存とタイムゾーン対応**
+    - [x] JCT (日本標準時) での日付・時刻処理の実装
+    - [x] `public/log/data_yyyymmdd.json` へのデータ保存処理の追加
+    - [x] `.gitignore` への `public/log/*.json` 追加

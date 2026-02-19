@@ -25,6 +25,8 @@
     4. **Junk Bond Demand**: HYG トレンド (プロキシ)
     5. **Market Volatility**: N225 Historical Volatility
     6. **Safe Haven Demand**: N225 20日リターン (プロキシ)
+- **ログ保存機能**: `public/log/data_yyyymmdd.json` に日次データを保存。同名ファイルは上書き。
+- **タイムゾーン**: 全て JCT (日本標準時) で処理。
 
 #### [NEW] [page.js](file:///src/app/page.js)
 - メインページ。
@@ -41,13 +43,16 @@
 - Linux環境でのセットアップ手順とCron設定。
 
 ### その他調整
-- **Git管理除外**: `.gitignore` に `public/data.json` およびログファイルを追加し、自動生成ファイルがリポジトリに含まれないように設定。
+- **Git管理除外**: `.gitignore` に以下のファイルを追加し、リポジトリに含まれないように設定。
+    - `public/data.json` (最新データ)
+    - `public/log/*.json` (履歴ログ)
+    - `cron.log`, `*.log` (システムログ)
 
 ## 検証結果
 
 ### 自動テスト
-- `node scripts/fetchData.js` の実行により、正常にデータが取得され `public/data.json` が生成されることを確認しました。
-- `yahoo-finance2` の `InvalidOptionsError` に対処するため、`historical` メソッドに `period2` を明示的に指定しました。
+- `node scripts/fetchData.js` の実行により、`public/data.json` および `public/log/data_yyyymmdd.json` が正常に生成されることを確認しました。
+- タイムゾーンがJCT (+09:00) で処理されていることを確認しました。
 
 ### 手動検証
 - 生成された `data.json` に基づき、フロントエンドが正常に描画されることを確認済み。
