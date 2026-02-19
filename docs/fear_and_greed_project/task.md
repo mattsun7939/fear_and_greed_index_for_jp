@@ -13,6 +13,8 @@
     - [x] スピードメーター (Gauge) コンポーネントの実装
     - [x] 7つの指標リスト表示コンポーネントの実装
     - [x] `public/data.json` の読み込み処理
+    - [x] フッター文言の修正 (Mock表記削除)
+    - [x] ページタイトルの修正 (Create New App -> Japanese Market Fear & Greed Index)
 - [x] ドキュメント作成
     - [x] Linux環境構築・Cron設定手順 (`manual.md`)
     - [x] プロジェクト構成・実装詳細 (`implementation_plan.md`)
