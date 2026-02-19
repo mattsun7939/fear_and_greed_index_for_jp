@@ -17,3 +17,5 @@
     - [x] Linux環境構築・Cron設定手順 (`manual.md`)
     - [x] プロジェクト構成・実装詳細 (`implementation_plan.md`)
     - [x] 動作確認・ウォークスルー (`walkthrough.md`)
+- [x] その他調整
+    - [x] `.gitignore` の更新 (データファイル、ログ等)

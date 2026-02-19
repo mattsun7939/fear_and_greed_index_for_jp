@@ -40,6 +40,9 @@
 #### [NEW] [manual.md](file:///docs/fear_and_greed_project/manual.md)
 - Linux環境でのセットアップ手順とCron設定。
 
+### その他調整
+- **Git管理除外**: `.gitignore` に `public/data.json` およびログファイルを追加し、自動生成ファイルがリポジトリに含まれないように設定。
+
 ## 検証結果
 
 ### 自動テスト
