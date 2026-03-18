@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const yahooFinanceModule = require('yahoo-finance2').default;
-const yahooFinance = new yahooFinanceModule();
+const yahooFinance = new yahooFinanceModule({ suppressNotices: ['yahooSurvey', 'ripHistorical'] });
 
 const DATA_FILE_PATH = path.join(__dirname, '../public/data.json');
 const LOG_DIR_PATH = path.join(__dirname, '../public/log');
@@ -44,7 +44,8 @@ async function fetchMarketData() {
     const period1 = pastDate.toISOString().split('T')[0];
     const period2 = todayJCT.toISOString().split('T')[0];
 
-    const n225History = await yahooFinance.historical('^N225', { period1, period2, interval: '1d' });
+    const chartResult = await yahooFinance.chart('^N225', { period1, period2, interval: '1d' });
+    const n225History = chartResult.quotes.filter(q => q.close !== null);
     await sleep(1000);
 
     // US Data for proxies

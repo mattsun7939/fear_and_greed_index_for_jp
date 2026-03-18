@@ -27,3 +27,5 @@
     - [x] `.gitignore` への `public/log/*.json` 追加
 - [x] **外部バックアップ (Google Drive)**
     - [x] `data_yyyymmdd.json` を Google Drive パスにも出力する機能の追加
+- [x] **保守・修正**
+    - [x] `yahoo-finance2` の `historical()` 廃止・nullチェック厳格化に伴うエラーの修正 (`chart()` への移行)
