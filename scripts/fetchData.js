@@ -53,6 +53,8 @@ async function fetchMarketData() {
     await sleep(1000);
     const hyg = await yahooFinance.quote('HYG');
     await sleep(1000);
+    const nkvi = await yahooFinance.quote('^NKVI.OS', {}, { validateResult: false });
+    await sleep(1000);
 
     // --- 計算ロジック ---
 
@@ -137,31 +139,18 @@ async function fetchMarketData() {
       description: `グローバルなリスク選好度(HYG)は移動平均と比較して${getRating(junkScore)}を示しています。`
     };
 
-    // 6. ボラティリティ (Volatility)
-    // 本来は日経VI(^JNIV)だが、取得できない場合は過去20日の標準偏差(Historical Volatility)で代用。
-    // ここではHVを計算する。
-    // HV = STDEV(ln(Price/PrevPrice)) * sqrt(250) * 100
-    const returns = [];
-    for (let i = 1; i < days20.length; i++) {
-      returns.push(Math.log(days20[i].close / days20[i - 1].close));
-    }
-    const meanReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
-    const variance = returns.reduce((a, b) => a + Math.pow(b - meanReturn, 2), 0) / returns.length;
-    const stdev = Math.sqrt(variance);
-    const hv = stdev * Math.sqrt(250) * 100; // 年率変動率(%)
-
-    // HVが低い(安定) -> Greed, 高い(不安定) -> Fear
-    // 基準: 15%以下=Extreme Greed, 30%以上=Extreme Fear
-    // score = 100 - ((hv - 15)/15 * 100) ?
-    // Map 15 -> 100, 30 -> 0 (Reverse scale)
-    let volScore = 100 - ((hv - 10) / 20 * 100);
+    // 6. ボラティリティ (Volatility / Nikkei VI)
+    // 日経平均VI (Volatility Index) の現在値を使用。
+    // 基準: 15以下=Extreme Greed (100), 40以上=Extreme Fear (0)
+    const viPrice = nkvi.regularMarketPrice;
+    let volScore = 100 - ((viPrice - 15) / 25 * 100);
     volScore = Math.max(0, Math.min(100, Math.round(volScore)));
 
     const volatilityIndicator = {
       name: 'Market Volatility',
       score: volScore,
       rating: getRating(volScore),
-      description: `日経平均のボラティリティ(HV)は${hv.toFixed(1)}%で、市場の不安定さは${getRating(volScore)}レベルです。`
+      description: `日経平均VIは${viPrice.toFixed(2)}で、オプション市場から算出されたボラティリティセンチメントは${getRating(volScore)}レベルです。`
     };
 
     // 7. セーフヘイブン需要 (Safe Haven Demand)
@@ -199,6 +188,7 @@ async function fetchMarketData() {
     const data = {
       score: totalScore,
       rating: getRating(totalScore),
+      n225Price: Math.round(latestPrice),
       timestamp: jctNow.toISOString(), // JCT ISO string (Note: built-in ISOstring is UTC, need to format manually or accept UTC-shifted time as "local")
       // Actually, user wants JCT processing. 
       // If I use jctNow.toISOString(), it puts the shifted time with 'Z', which implies UTC.
