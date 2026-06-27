@@ -1,7 +1,44 @@
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 const yahooFinanceModule = require('yahoo-finance2').default;
 const yahooFinance = new yahooFinanceModule({ suppressNotices: ['yahooSurvey', 'ripHistorical'] });
+
+async function fetchJPXMarketIndicators() {
+  try {
+    console.log('Fetching JPX market indicators (Toraku Ratio, New Highs/Lows) from nikkei225jp.com...');
+    const htmlRes = await fetch('https://nikkei225jp.com/data/touraku.php', {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    if (!htmlRes.ok) throw new Error(`HTTP error! status: ${htmlRes.status}`);
+    const html = await htmlRes.text();
+    const scriptMatch = html.match(/src=\"(\/_data\/_nfsDATA\/DAY\/daily2year\.json\?\d+)\"/);
+    if (!scriptMatch) throw new Error('daily2year.json script tag not found in HTML');
+
+    const url = 'https://nikkei225jp.com' + scriptMatch[1];
+    const dataRes = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    if (!dataRes.ok) throw new Error(`HTTP error! status: ${dataRes.status}`);
+    const js = await dataRes.text();
+
+    const sandbox = {};
+    vm.createContext(sandbox);
+    vm.runInContext(js, sandbox);
+    const arr = sandbox.DAILY;
+    if (!arr || arr.length === 0) throw new Error('DAILY array not found in script context');
+
+    const latest = arr[arr.length - 1];
+    return {
+      toraku25: latest[7],
+      newHighs: latest[8],
+      newLows: latest[9]
+    };
+  } catch (err) {
+    console.error('Failed to fetch JPX indicators, using fallbacks:', err);
+    return null;
+  }
+}
 
 const DATA_FILE_PATH = path.join(__dirname, '../public/data.json');
 const LOG_DIR_PATH = path.join(__dirname, '../public/log');
@@ -32,6 +69,8 @@ async function fetchMarketData() {
 
     // Yahoo Finance Japan symbols can be tricky via this lib. 
     // We will use standard Ticker symbols.
+
+    const jpxData = await fetchJPXMarketIndicators();
 
     const n225 = await yahooFinance.quote('^N225');
     await sleep(1000);
@@ -78,37 +117,56 @@ async function fetchMarketData() {
     };
 
     // 2. 株価の強さ (Stock Price Strength)
-    // プロキシ: 52週高値・安値に対する現在位置
-    // (Price - 52Low) / (52High - 52Low)
-    const yearHigh = n225.fiftyTwoWeekHigh;
-    const yearLow = n225.fiftyTwoWeekLow;
-    let strengthScore = ((latestPrice - yearLow) / (yearHigh - yearLow)) * 100;
-    strengthScore = Math.max(0, Math.min(100, Math.round(strengthScore)));
+    // 東証プライムの新高値・新安値銘柄比率。
+    // 取得できない場合は、日経平均の52週高値・安値に対する現在位置（フォールバック）を使用。
+    let strengthScore = 50;
+    let strengthDesc = '';
+    if (jpxData && typeof jpxData.newHighs === 'number' && typeof jpxData.newLows === 'number') {
+      const totalNew = jpxData.newHighs + jpxData.newLows;
+      const ratio = totalNew > 0 ? jpxData.newHighs / totalNew : 0.5;
+      strengthScore = Math.max(0, Math.min(100, Math.round(ratio * 100)));
+      strengthDesc = `東証プライムの新高値銘柄数は${jpxData.newHighs}、新安値銘柄数は${jpxData.newLows}で、新高値比率(${strengthScore}%)は${getRating(strengthScore)}レベルです。`;
+    } else {
+      const yearHigh = n225.fiftyTwoWeekHigh;
+      const yearLow = n225.fiftyTwoWeekLow;
+      strengthScore = ((latestPrice - yearLow) / (yearHigh - yearLow)) * 100;
+      strengthScore = Math.max(0, Math.min(100, Math.round(strengthScore)));
+      strengthDesc = `日経平均は52週レンジ of ${strengthScore}% の位置にあり、${getRating(strengthScore)}を示しています。(フォールバック判定)`;
+    }
 
     const strengthIndicator = {
       name: 'Stock Price Strength',
       score: strengthScore,
       rating: getRating(strengthScore),
-      description: `日経平均は52週レンジの${strengthScore}%の位置にあり、${getRating(strengthScore)}を示しています。`
+      description: strengthDesc
     };
 
     // 3. 株価の幅 (Stock Price Breadth)
-    // プロキシ: 短期(5日)RSIのようなオシレーターを使用 (市場全体の騰落レシオ取得困難なため)
-    // または、直近のモメンタム加速を見る。
-    // ここでは簡易的に「過去20日間の上昇日数割合」をプロキシとする。
+    // 東証プライムの25日騰落レシオ。
+    // 取得できない場合は、日経平均の過去20日間の上昇日数割合（フォールバック）を使用。
+    let breadthScore = 50;
+    let breadthDesc = '';
     const days20 = n225History.slice(-20);
-    let upDays = 0;
-    for (let i = 1; i < days20.length; i++) {
-      if (days20[i].close > days20[i - 1].close) upDays++;
+    if (jpxData && typeof jpxData.toraku25 === 'number') {
+      // 70以下 -> 0 (Extreme Fear), 130以上 -> 100 (Extreme Greed)
+      const toraku = jpxData.toraku25;
+      let scoreRaw = ((toraku - 70) / (130 - 70)) * 100;
+      breadthScore = Math.max(0, Math.min(100, Math.round(scoreRaw)));
+      breadthDesc = `東証プライム市場の25日騰落レシオは${toraku.toFixed(1)}%で、市場の広がりは${getRating(breadthScore)}レベルです。`;
+    } else {
+      let upDays = 0;
+      for (let i = 1; i < days20.length; i++) {
+        if (days20[i].close > days20[i - 1].close) upDays++;
+      }
+      breadthScore = Math.max(0, Math.min(100, Math.round((upDays / 19) * 100)));
+      breadthDesc = `過去20営業日のうち${upDays}日が上昇しており、市場の裾野の広さは${getRating(breadthScore)}です。(フォールバック判定)`;
     }
-    let breadthScore = (upDays / 19) * 100;
-    breadthScore = Math.max(0, Math.min(100, Math.round(breadthScore)));
 
     const breadthIndicator = {
-      name: 'Stock Price Breadth (Proxy)',
+      name: 'Stock Price Breadth',
       score: breadthScore,
       rating: getRating(breadthScore),
-      description: `過去20営業日のうち${upDays}日が上昇しており、市場の裾野の広さは${getRating(breadthScore)}です。`
+      description: breadthDesc
     };
 
     // 4. プット/コール・オプション (Put/Call Options)
