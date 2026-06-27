@@ -29,10 +29,49 @@ async function fetchJPXMarketIndicators() {
     if (!arr || arr.length === 0) throw new Error('DAILY array not found in script context');
 
     const latest = arr[arr.length - 1];
+
+    // Fetch margin trading data (dailyweek2.json)
+    console.log('Fetching Margin Trading indicators (信用評価損益率) from nikkei225jp.com...');
+    let marginTradingRatio = null;
+    try {
+      const sinyouHtmlRes = await fetch('https://nikkei225jp.com/data/sinyou.php', {
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
+      if (sinyouHtmlRes.ok) {
+        const sinyouHtml = await sinyouHtmlRes.text();
+        const sinyouScriptMatch = sinyouHtml.match(/src=\"(\/_data\/_nfsDATA\/DAY\/dailyweek2\.json\?\d+)\"/);
+        if (sinyouScriptMatch) {
+          const sinyouUrl = 'https://nikkei225jp.com' + sinyouScriptMatch[1];
+          const sinyouDataRes = await fetch(sinyouUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0' }
+          });
+          if (sinyouDataRes.ok) {
+            const sinyouJs = await sinyouDataRes.text();
+            const sinyouSandbox = {};
+            vm.createContext(sinyouSandbox);
+            vm.runInContext(sinyouJs, sinyouSandbox);
+            const sinyouArr = sinyouSandbox.DAILY;
+            if (sinyouArr && sinyouArr.length > 0) {
+              let idx = sinyouArr.length - 1;
+              while (idx >= 0 && (sinyouArr[idx][7] === "" || sinyouArr[idx][7] === null || typeof sinyouArr[idx][7] !== 'number')) {
+                idx--;
+              }
+              if (idx >= 0) {
+                marginTradingRatio = sinyouArr[idx][7];
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to scrape margin trading data, will fallback:', e);
+    }
+
     return {
       toraku25: latest[7],
       newHighs: latest[8],
-      newLows: latest[9]
+      newLows: latest[9],
+      marginTradingRatio: marginTradingRatio
     };
   } catch (err) {
     console.error('Failed to fetch JPX indicators, using fallbacks:', err);
@@ -169,14 +208,27 @@ async function fetchMarketData() {
       description: breadthDesc
     };
 
-    // 4. プット/コール・オプション (Put/Call Options)
-    // データ取得困難。中立(50)固定またはVIXプロキシを使用。
-    // 今回は「中立」固定とし、将来の実装のためにプレースホルダーとする。
-    const putCallIndicator = {
-      name: 'Put/Call Options',
-      score: 50,
-      rating: 'Neutral',
-      description: 'オプション市場のデータが取得できないため、中立(50)としています。'
+    // 4. 信用評価損益率 (Margin Trading Sentiment)
+    // 東証プライム市場の個人投資家の信用評価損益率。
+    // 基準: -3%以上 = 100 (Extreme Greed), -18%以下 = 0 (Extreme Fear)
+    // 取得できない場合は、中立(50)固定。
+    let marginScore = 50;
+    let marginDesc = '';
+    if (jpxData && typeof jpxData.marginTradingRatio === 'number') {
+      const ratio = jpxData.marginTradingRatio; // e.g. -8.10
+      let scoreRaw = ((ratio - (-18)) / ((-3) - (-18))) * 100;
+      marginScore = Math.max(0, Math.min(100, Math.round(scoreRaw)));
+      marginDesc = `個人投資家の信用評価損益率は${ratio.toFixed(2)}%で、信用口座の含み損益センチメントは${getRating(marginScore)}レベルです。`;
+    } else {
+      marginScore = 50;
+      marginDesc = '信用評価損益率はデータソース制限のため、中立(50)としています。(フォールバック判定)';
+    }
+
+    const marginIndicator = {
+      name: 'Margin Trading Sentiment',
+      score: marginScore,
+      rating: getRating(marginScore),
+      description: marginDesc
     };
 
     // 5. ジャンク債需要 (Junk Bond Demand)
@@ -232,7 +284,7 @@ async function fetchMarketData() {
       momentumIndicator,
       strengthIndicator,
       breadthIndicator,
-      // putCallIndicator, // Removed as per user request (hardcoded neutral)
+      marginIndicator,
       junkIndicator,
       volatilityIndicator,
       safeHavenIndicator
